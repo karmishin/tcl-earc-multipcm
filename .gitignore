@@ -1,0 +1,6 @@
+dist/
+*.so
+*.img
+*.zip
+*.apk
+.DS_Store

@@ -1,0 +1,6 @@
+id=tcl_earc_multipcm
+name=TCL eARC multichannel PCM fix
+version=@FIRMWARE@
+versionCode=1
+author=Mikhail Karmishin
+description=Lets eARC pass multichannel LPCM to soundbars that only advertise up to 48 kHz (e.g. Sonos Beam Gen 2). Built for @FIRMWARE@; does nothing on any other libthal_audio.so.
