@@ -7,12 +7,11 @@ STOCK_SHA256=@STOCK_SHA256@
 LIB=$MODDIR/system/vendor/lib/libthal_audio.so
 
 cur=$(sha256sum /vendor/lib/libthal_audio.so | cut -d' ' -f1)
+# status.sh reports the outcome; nothing is recorded here, since a recorded
+# status goes stale on boots where Magisk doesn't run this script.
 if [ "$cur" = "$STOCK_SHA256" ]; then
   rm -f "$MODDIR/skip_mount"
   chcon u:object_r:vendor_file:s0 "$LIB"
-  # service.sh replaces this once it has checked the mount.
-  echo "mount pending: stock lib matches, waiting for Magisk to mount the patched one" > "$MODDIR/status.txt"
 else
   touch "$MODDIR/skip_mount"
-  echo "skipped: /vendor/lib/libthal_audio.so is $cur, not the lib this module was built from" > "$MODDIR/status.txt"
 fi

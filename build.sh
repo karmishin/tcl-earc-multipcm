@@ -43,7 +43,9 @@ python3 patch_libthal_audio.py "$STOCK" "$STAGE/system/vendor/lib/libthal_audio.
 
 STOCK_SHA256=$(sha256 "$STOCK")
 PATCHED_SHA256=$(sha256 "$STAGE/system/vendor/lib/libthal_audio.so")
-for f in module.prop customize.sh post-fs-data.sh service.sh; do
+# Filled in from the templates in module/; the zip below takes the same list.
+TEMPLATES="module.prop customize.sh post-fs-data.sh status.sh"
+for f in $TEMPLATES; do
   sed -e "s/@STOCK_SHA256@/$STOCK_SHA256/g" -e "s/@PATCHED_SHA256@/$PATCHED_SHA256/g" \
       -e "s/@FIRMWARE@/$FIRMWARE/g" "module/$f" > "$STAGE/$f"
 done
@@ -53,5 +55,5 @@ OUT=dist/tcl-earc-multipcm-$FIRMWARE.zip
 rm -f "$OUT"
 # Fixed timestamps so the same input lib always gives the same zip.
 find "$STAGE" -exec touch -h -t 200901010000 {} +
-(cd "$STAGE" && zip -qrX - META-INF module.prop customize.sh post-fs-data.sh service.sh system) > "$OUT"
-echo "built $OUT"
+(cd "$STAGE" && zip -qrX - META-INF $TEMPLATES system) > "$OUT"
+echo "built $PWD/$OUT"

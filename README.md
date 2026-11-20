@@ -29,7 +29,7 @@ adb reboot
 After the reboot, this should print `active: /vendor/lib/libthal_audio.so is the patched lib`:
 
 ```sh
-adb shell su -c cat /data/adb/modules/tcl_earc_multipcm/status.txt
+adb shell su -c sh /data/adb/modules/tcl_earc_multipcm/status.sh
 ```
 
 The module is tied to the exact library it was built from. After a firmware update you have to run `build.sh` again.

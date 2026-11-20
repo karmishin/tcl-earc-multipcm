@@ -44,6 +44,9 @@ def elf_symbols(data):
         sys.exit("not an ARM ELF")
     e_phoff, e_shoff = struct.unpack_from("<II", data, 0x1C)
     e_phentsize, e_phnum, e_shentsize, e_shnum = struct.unpack_from("<HHHH", data, 0x2A)
+    # The section headers sit at the end of the file, so this catches a cut-off copy.
+    if e_phoff + e_phnum * e_phentsize > len(data) or e_shoff + e_shnum * e_shentsize > len(data):
+        sys.exit("truncated ELF: its headers point past the end of the file")
 
     loads = []
     for i in range(e_phnum):
