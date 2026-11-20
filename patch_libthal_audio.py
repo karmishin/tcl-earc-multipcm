@@ -31,10 +31,17 @@ CMPEQ_R0_7 = bytes.fromhex("0728")  # Thumb `cmp r0, #0x7`
 CMP_R0_R0 = bytes.fromhex("8042")  # Thumb `cmp r0, r0`
 
 
+def is_ldrb_r0_imm(insn):
+    """Thumb T1 `ldrb r0, [rN, #imm5]`: 01111 imm5 Rn Rt, with Rt = r0."""
+    return (insn[0] | insn[1] << 8) & 0xF807 == 0x7800
+
+
 def elf_symbols(data):
     """Return {name: (vaddr, size)} from .dynsym and a vaddr->file-offset mapper."""
     if data[:4] != b"\x7fELF" or data[4] != 1 or data[5] != 1:
         sys.exit("not a 32-bit little-endian ELF")
+    if struct.unpack_from("<H", data, 0x12)[0] != 40:  # EM_ARM
+        sys.exit("not an ARM ELF")
     e_phoff, e_shoff = struct.unpack_from("<II", data, 0x1C)
     e_phentsize, e_phnum, e_shentsize, e_shnum = struct.unpack_from("<HHHH", data, 0x2A)
 
@@ -65,8 +72,13 @@ def elf_symbols(data):
 
 
 def main():
+    if len(sys.argv) != 3:
+        sys.exit(__doc__.strip().splitlines()[-1])
     src, dst = sys.argv[1:3]
-    data = bytearray(open(src, "rb").read())
+    with open(src, "rb") as f:
+        data = bytearray(f.read())
+    if len(data) < 0x34:
+        sys.exit("file too short to be an ELF")
     print("stock   sha256", hashlib.sha256(data).hexdigest())
     symbols, to_offset = elf_symbols(data)
 
@@ -76,9 +88,10 @@ def main():
         vaddr, size = symbols[name]
         start = to_offset(vaddr)
         sites = [
-            off for off in range(start, start + size - 8, 2)
+            off for off in range(start, start + size - 7, 2)  # the 8-byte sequence must end inside the function
             if data[off:off + 2] == CMP_R0_7F
             and data[off + 2:off + 4] == ITT_EQ
+            and is_ldrb_r0_imm(data[off + 4:off + 6])
             and data[off + 6:off + 8] == CMPEQ_R0_7
         ]
         if len(sites) != SITES_PER_FUNCTION:
@@ -87,7 +100,8 @@ def main():
             data[off:off + 2] = CMP_R0_R0
         print(f"patched {len(sites)} checks in {name}")
 
-    open(dst, "wb").write(data)
+    with open(dst, "wb") as f:
+        f.write(data)
     print("patched sha256", hashlib.sha256(data).hexdigest())
 
 

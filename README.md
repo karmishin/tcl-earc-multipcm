@@ -26,7 +26,7 @@ adb shell su -c magisk --install-module /data/local/tmp/m.zip
 adb reboot
 ```
 
-After the reboot, this should print `mounted patched lib`:
+After the reboot, this should print `active: /vendor/lib/libthal_audio.so is the patched lib`:
 
 ```sh
 adb shell su -c cat /data/adb/modules/tcl_earc_multipcm/status.txt
@@ -48,3 +48,8 @@ adb reboot
 In `libthal_audio.so`, `thal_audio_set_digital_output_mode` and `thal_set_audio_spdif_parameter_internel` send `1` only if the soundbar lists exactly `0F 7F 07`, meaning it must support every sample rate up to 192 kHz. Most soundbars stop at 48 kHz, so the TV sends `0` and you get stereo.
 
 The module changes 20 instructions: in each of the 10 per-format checks of both functions, `cmp r0, #0x7f` becomes `cmp r0, r0`. The TV still requires the soundbar to advertise 8-channel 16/20/24-bit LPCM; it just stops requiring 192 kHz. Magisk overlays the patched library on `/vendor` without modifying the partition.
+
+Some details:
+
+- The bit-depth byte still has to be exactly `07`. A soundbar that advertises 8-channel LPCM at 16 and 24 bit only (`05`) still gets stereo.
+- `thal_is_amp_support_format` has a third copy of the `0F 7F 07` check. It isn't patched because it doesn't affect PCM: every caller asks about DTS-HD, never LPCM.

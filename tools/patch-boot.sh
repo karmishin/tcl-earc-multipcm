@@ -6,8 +6,15 @@
 #
 # boot.img must be the exact boot image the TV is running (check the kernel
 # build string against /proc/version).
+#
+# Written for Magisk v27. v28 renamed the native libs (libmagisk32.so is gone),
+# so other versions will fail at the unzip step.
 set -eu
 
+if [ $# -ne 3 ]; then
+  echo "usage: $0 <Magisk-v27.0.apk> <stock boot.img> <output boot.img>" >&2
+  exit 1
+fi
 APK=$1 IN=$2 OUT=$3
 ADB="adb ${ADB_SERIAL:+-s $ADB_SERIAL}"
 DIR=/data/local/tmp/magisk
@@ -29,4 +36,5 @@ $ADB push "$STAGE/." "$DIR/" >/dev/null
 # FBE (keep forceencrypt), vbmeta partition exists (don't patch vbmeta flag).
 $ADB shell "cd $DIR && chmod 755 * && KEEPVERITY=true KEEPFORCEENCRYPT=true PATCHVBMETAFLAG=false RECOVERYMODE=false LEGACYSAR=false ./busybox sh ./boot_patch.sh boot.img"
 $ADB pull "$DIR/new-boot.img" "$OUT" >/dev/null
+$ADB shell "rm -rf $DIR"
 shasum -a 256 "$OUT"
